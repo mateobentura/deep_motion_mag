@@ -20,7 +20,7 @@ from preprocessor import preprocess_image, preproc_color
 from data_loader import read_and_decode_3frames
 
 # Change here if you use ffmpeg.
-DEFAULT_VIDEO_CONVERTER = 'avconv'
+DEFAULT_VIDEO_CONVERTER = 'ffmpeg'
 
 
 class MagNet3Frames(object):
@@ -103,7 +103,7 @@ class MagNet3Frames(object):
 
     def _decoder(self, texture_enc, shape_enc):
         if self.texture_downsample:
-            texture_enc = tf.image.resize_nearest_neighbor(
+            texture_enc = tf.compat.v1.image.resize_nearest_neighbor(
                             texture_enc,
                             tf.shape(texture_enc)[1:3] \
                             * 2)
@@ -129,16 +129,16 @@ class MagNet3Frames(object):
                           is_training,
                           reuse=False,
                           name='ynet_3frames'):
-        with tf.variable_scope(name, reuse=reuse):
-            with tf.variable_scope('encoder'):
+        with tf.compat.v1.variable_scope(name, reuse=reuse):
+            with tf.compat.v1.variable_scope('encoder'):
                 self.texture_a, self.shape_a = self._encoder(image_a)
-            with tf.variable_scope('encoder', reuse=True):
+            with tf.compat.v1.variable_scope('encoder', reuse=True):
                 self.texture_b, self.shape_b = self._encoder(image_b)
-            with tf.variable_scope('manipulator'):
+            with tf.compat.v1.variable_scope('manipulator'):
                 self.out_shape_enc = self.manipulator(self.shape_a,
                                                       self.shape_b,
                                                       amplification_factor)
-            with tf.variable_scope('decoder'):
+            with tf.compat.v1.variable_scope('decoder'):
                 return self._decoder(self.texture_b, self.out_shape_enc)
 
     def save(self, checkpoint_dir, step):
@@ -173,11 +173,11 @@ class MagNet3Frames(object):
             return False
 
     def _build_feed_model(self):
-        self.test_input = tf.placeholder(tf.float32,
+        self.test_input = tf.compat.v1.placeholder(tf.float32,
                                          [None, None, None,
                                              self.n_channels * 3],
                                          name='test_AB_and_output')
-        self.test_amplification_factor = tf.placeholder(tf.float32,
+        self.test_amplification_factor = tf.compat.v1.placeholder(tf.float32,
                                                         [None],
                                                         name='amplification_factor')
         self.test_image_a = self.test_input[:, :, :, :self.n_channels]
@@ -192,7 +192,7 @@ class MagNet3Frames(object):
                                False,
                                False)
         self.test_output = tf.clip_by_value(self.test_output, -1.0, 1.0)
-        self.saver = tf.train.Saver()
+        self.saver = tf.compat.v1.train.Saver()
         self.is_graph_built = True
 
     def setup_for_inference(self, checkpoint_dir, image_width, image_height):
@@ -204,8 +204,8 @@ class MagNet3Frames(object):
         self.image_height = image_height
         # Figure out image dimension
         self._build_feed_model()
-        ginit_op = tf.global_variables_initializer()
-        linit_op = tf.local_variables_initializer()
+        ginit_op = tf.compat.v1.global_variables_initializer()
+        linit_op = tf.compat.v1.local_variables_initializer()
         self.sess.run([ginit_op, linit_op])
 
         if self.load(checkpoint_dir):

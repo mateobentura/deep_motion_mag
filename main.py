@@ -62,11 +62,11 @@ def main(args):
     exp_name = config['exp_name']
     setproctitle.setproctitle('{}_{}_{}' \
                               .format(args.phase, network_type, exp_name))
-    tfconfig = tf.ConfigProto(allow_soft_placement=True,
+    tfconfig = tf.compat.v1.ConfigProto(allow_soft_placement=True,
                               log_device_placement=False)
     tfconfig.gpu_options.allow_growth = True
 
-    with tf.Session(config=tfconfig) as sess:
+    with tf.compat.v1.Session(config=tfconfig) as sess:
         model = MagNet3Frames(sess, exp_name, config['architecture'])
         checkpoint = config['training']['checkpoint_dir']
         if args.phase == 'train':
